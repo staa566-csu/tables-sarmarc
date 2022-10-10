@@ -1,0 +1,83 @@
+---
+title: "Table"
+author: "Sarah Marcrum"
+format: html
+editor: visual
+---
+
+## Superbowl Ad Content
+
+-   Source: <https://github.com/fivethirtyeight/superbowl-ads>
+
+This data set lists ads from the 10 brands that had the most advertisements in Super Bowls from 2000 to 2020, classified by various characteristics (funny, patriotic, animals, etc.). The following table shows a breakdown of the ad content by year (some ads fall into multiple categories). The data set spans a 20 year period, so I made the content categories column static for ease of reading. I chose reactable so that columns could be sorted. Sorting allows the user to easily view the top/bottom content categories for each year. I also added a .csv download link so the source data would be available to the viewer.
+
+
+```{r, echo=FALSE, results='hide'}
+#load data
+data <- read.csv('superbowl-ads.csv')
+head(data)
+```
+
+
+```{r, echo=FALSE, results='hide'}
+library(sjmisc)
+library(dplyr)
+#format data
+data <- data %>% mutate(across(funny:use_sex,as.logical))
+yearly <- data %>% 
+  group_by(year) %>%
+  summarise(funny = sum(funny),
+            product = sum(show_product_quickly),
+            patriotic = sum(patriotic),
+            celebrity = sum(celebrity),
+            danger = sum(danger),
+            animals = sum(animals),
+            sex = sum(use_sex))
+
+yearly <- yearly %>% rotate_df(cn = TRUE)
+
+yearly <- cbind("Content" = rownames(yearly), yearly)
+rownames(yearly) <- 1:nrow(yearly)
+
+head(yearly)
+```
+
+
+
+```{r, warning=FALSE}
+#interactive (sortable) table with reactable
+library(reactable)
+library(htmltools)
+library(fontawesome)
+
+table <- htmltools::browsable(
+  tagList(
+    tags$button(
+      tagList(fontawesome::fa("download"), "Download as CSV"),
+      onclick = "Reactable.downloadDataCSV('superbowl-ads-download', 'superbowl-ads.csv')"
+    ),
+
+   reactable(yearly,
+          style = list(fontSize = "1.2rem"),
+          columns = list(
+            Content = colDef(
+              sticky = "left",
+              style = list(borderRight = "1px solid #eee"),
+              headerStyle = list(borderRight = "1px solid #eee")
+            )
+          ),
+          defaultSortOrder = "desc",
+          highlight = TRUE,
+          elementId = "superbowl-ads-download"
+          )
+  )
+)
+
+div(class = "table",
+    div(class = "title", "Content of Top Brands' Superbowl Ads (2000-2020)"),
+    table
+)
+```
+
+
+
